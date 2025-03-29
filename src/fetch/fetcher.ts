@@ -5,6 +5,8 @@ export const EP = {
     // ユーザー一覧
     users: () => "/api/users",
 
+    // 日記のUPSERT
+    upsert_diary: (userId: string, date: string) => `/api/diary/${userId}/${date}`,
 }
 
 export const fetcherGet = async <T>(url: string): Promise<T> =>
