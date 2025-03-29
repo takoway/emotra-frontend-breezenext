@@ -8,10 +8,11 @@ import Button from '@/components/Button'
 import Input from '@/components/Input'
 import { fetcherPost, EP } from '@/fetch/fetcher'
 import { useAuth } from '@/hooks/auth'
+import { getTodayDateInTokyo } from '@/utils/date'
 
 const Diary = () => {
     const { user } = useAuth({ middleware: 'auth' })
-    const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+    const [date, setDate] = useState(getTodayDateInTokyo())
     const [mental, setMental] = useState(5)
     const [diary, setDiary] = useState('')
 
