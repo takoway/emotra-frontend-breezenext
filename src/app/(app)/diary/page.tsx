@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import { toast, ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 import Header from '@/app/(app)/Header'
 import Button from '@/components/Button'
 import Input from '@/components/Input'
@@ -18,14 +20,17 @@ const Diary = () => {
 
         if (!user?.id) {
             console.error('User ID is not available')
+            toast.error('ユーザー情報が取得できませんでした。')
             return
         }
 
         try {
             const endpoint = EP.upsert_diary(user.id, date)
             const response = await fetcherPost(endpoint, { mental, diary })
+            toast.success('日記が正常に保存されました！', { autoClose: 1500 })
             console.log('Success:', response)
         } catch (error) {
+            toast.error('日記の保存中にエラーが発生しました。')
             console.error('Error:', error)
         }
     }
@@ -91,6 +96,9 @@ const Diary = () => {
                     </div>
                 </div>
             </div>
+
+            {/* トースト */}
+            <ToastContainer position="bottom-center" />
         </>
     )
 }
