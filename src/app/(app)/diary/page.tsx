@@ -9,6 +9,7 @@ import Input from '@/components/Input'
 import { fetcherPost, fetcherGet, EP } from '@/fetch/fetcher'
 import { useAuth } from '@/hooks/auth'
 import { getTodayDateInTokyo } from '@/utils/date'
+import { DiaryApiResponse, DiaryData } from '@/types/diary'
 
 const Diary = () => {
     const { user } = useAuth({ middleware: 'auth' })
@@ -22,7 +23,7 @@ const Diary = () => {
 
             try {
                 const endpoint = EP.get_diary(user.id, date)
-                const response = await fetcherGet(endpoint)
+                const response = await fetcherGet<DiaryApiResponse>(endpoint)
 
                 if (response) {
                     if (Array.isArray(response.data) && response.data.length === 0) {
@@ -53,7 +54,7 @@ const Diary = () => {
 
         try {
             const endpoint = EP.upsert_diary(user.id, date)
-            const response = await fetcherPost(endpoint, { mental, diary })
+            const response = await fetcherPost<DiaryApiResponse>(endpoint, { mental, diary })
             toast.success('日記が正常に保存されました！', { autoClose: 1500 })
             console.log('Success:', response)
         } catch (error) {
