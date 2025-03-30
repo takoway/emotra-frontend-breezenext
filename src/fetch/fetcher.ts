@@ -5,7 +5,8 @@ export const EP = {
     // ユーザー一覧
     users: () => "/api/users",
 
-    // 日記のUPSERT
+    // 日記
+    get_diary: (userId: string, date: string) => `/api/diary/${userId}/${date}`,
     upsert_diary: (userId: string, date: string) => `/api/diary/${userId}/${date}`,
 }
 

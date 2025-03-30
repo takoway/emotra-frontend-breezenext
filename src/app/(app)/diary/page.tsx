@@ -1,12 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { toast, ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import Header from '@/app/(app)/Header'
 import Button from '@/components/Button'
 import Input from '@/components/Input'
-import { fetcherPost, EP } from '@/fetch/fetcher'
+import { fetcherPost, fetcherGet, EP } from '@/fetch/fetcher'
 import { useAuth } from '@/hooks/auth'
 import { getTodayDateInTokyo } from '@/utils/date'
 
@@ -15,6 +15,32 @@ const Diary = () => {
     const [date, setDate] = useState(getTodayDateInTokyo())
     const [mental, setMental] = useState(5)
     const [diary, setDiary] = useState('')
+
+    useEffect(() => {
+        const fetchDiary = async () => {
+            if (!user?.id) return
+
+            try {
+                const endpoint = EP.get_diary(user.id, date)
+                const response = await fetcherGet(endpoint)
+
+                if (response) {
+                    if (Array.isArray(response.data) && response.data.length === 0) {
+                        toast.warn(`${date}の日記データが見つかりませんでした。`, { autoClose: 1500 })
+                        return
+                    }
+                    setMental(response.data.mental || 5)
+                    setDiary(response.data.diary || '')
+                } else {
+                    console.warn('No response data found')
+                }
+            } catch (error) {
+                toast.error(`${date}の日記データの取得中にエラーが発生しました。`)
+            }
+        }
+
+        fetchDiary()
+    }, [user?.id, date])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
