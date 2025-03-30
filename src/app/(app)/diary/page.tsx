@@ -17,10 +17,15 @@ const Diary = () => {
     const [date, setDate] = useState(getTodayDateInTokyo())
     const [mental, setMental] = useState(5)
     const [diary, setDiary] = useState('')
+    const [loadingToastId, setLoadingToastId] = useState<string | null>(null)
 
     useEffect(() => {
         const fetchDiary = async () => {
             if (!user?.id) return
+
+            // ローディングトーストを表示（上部に表示）
+            const toastId = toast.loading('データを取得中...', { position: 'top-center' })
+            setLoadingToastId(toastId)
 
             try {
                 const endpoint = EP.get_diary(user.id, date)
@@ -28,7 +33,15 @@ const Diary = () => {
 
                 if (response) {
                     if (Array.isArray(response.data) && response.data.length === 0) {
-                        toast.warn(`${date}の日記データが見つかりませんでした。`, { autoClose: 1500 })
+                        toast.update(toastId, {
+                            render: `${date}の日記データが見つかりませんでした。`,
+                            type: 'warning',
+                            isLoading: false,
+                            autoClose: 1500,
+                            position: 'bottom-center', // 警告は下部に表示
+                        })
+                        setMental(5)
+                        setDiary('')
                         return
                     }
                     setMental(response.data.mental || 5)
@@ -37,7 +50,17 @@ const Diary = () => {
                     console.warn('No response data found')
                 }
             } catch (error) {
-                toast.error(`${date}の日記データの取得中にエラーが発生しました。`)
+                toast.update(toastId, {
+                    render: `${date}の日記データの取得中にエラーが発生しました。`,
+                    type: 'error',
+                    isLoading: false,
+                    autoClose: 1500,
+                    position: 'bottom-center', // エラーは下部に表示
+                })
+            } finally {
+                // ローディングトーストを閉じる
+                toast.dismiss(toastId)
+                setLoadingToastId(null)
             }
         }
 
@@ -49,17 +72,30 @@ const Diary = () => {
 
         if (!user?.id) {
             console.error('User ID is not available')
-            toast.error('ユーザー情報が取得できませんでした。')
+            toast.error('ユーザー情報が取得できませんでした。', { position: 'bottom-center' })
             return
         }
 
+        const toastId = toast.loading('日記を保存中...', { position: 'top-center' })
         try {
             const endpoint = EP.upsert_diary(user.id, date)
             const response = await fetcherPost<DiaryApiResponse>(endpoint, { mental, diary })
-            toast.success('日記が正常に保存されました！', { autoClose: 1500 })
+            toast.update(toastId, {
+                render: '日記が正常に保存されました！',
+                type: 'success',
+                isLoading: false,
+                autoClose: 1500,
+                position: 'bottom-center', // 成功メッセージは下部に表示
+            })
             console.log('Success:', response)
         } catch (error) {
-            toast.error('日記の保存中にエラーが発生しました。')
+            toast.update(toastId, {
+                render: '日記の保存中にエラーが発生しました。',
+                type: 'error',
+                isLoading: false,
+                autoClose: 1500,
+                position: 'bottom-center', // エラーは下部に表示
+            })
             console.error('Error:', error)
         }
     }
@@ -82,7 +118,7 @@ const Diary = () => {
                                             setDate(prevDate.toISOString().split('T')[0])
                                         }}
                                         className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded flex items-center">
-                                        <FaChevronLeft/>
+                                        <FaChevronLeft />
                                     </Button>
 
                                     <Input
@@ -102,7 +138,7 @@ const Diary = () => {
                                             setDate(nextDate.toISOString().split('T')[0])
                                         }}
                                         className="ml-2 bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded flex items-center">
-                                        <FaChevronRight/>
+                                        <FaChevronRight />
                                     </Button>
                                 </div>
 
@@ -149,7 +185,7 @@ const Diary = () => {
             </div>
 
             {/* トースト */}
-            <ToastContainer position="bottom-center" />
+            <ToastContainer />
         </>
     )
 }
