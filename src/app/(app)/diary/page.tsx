@@ -1,0 +1,193 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { toast, ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
+import Header from '@/app/(app)/Header'
+import Button from '@/components/Button'
+import Input from '@/components/Input'
+import { fetcherPost, fetcherGet, EP } from '@/fetch/fetcher'
+import { useAuth } from '@/hooks/auth'
+import { getTodayDateInTokyo } from '@/utils/date'
+import { DiaryApiResponse } from '@/types/diary'
+import { FaChevronLeft, FaChevronRight } from 'react-icons/fa'
+
+const Diary = () => {
+    const { user } = useAuth({ middleware: 'auth' })
+    const [date, setDate] = useState(getTodayDateInTokyo())
+    const [mental, setMental] = useState(5)
+    const [diary, setDiary] = useState('')
+    const [loadingToastId, setLoadingToastId] = useState<string | null>(null)
+
+    useEffect(() => {
+        const fetchDiary = async () => {
+            if (!user?.id) return
+
+            // ローディングトーストを表示（上部に表示）
+            const toastId = toast.loading('データを取得中...', { position: 'top-center' })
+            setLoadingToastId(toastId)
+
+            try {
+                const endpoint = EP.get_diary(user.id, date)
+                const response = await fetcherGet<DiaryApiResponse>(endpoint)
+
+                if (response) {
+                    if (Array.isArray(response.data) && response.data.length === 0) {
+                        toast.update(toastId, {
+                            render: `${date}の日記データが見つかりませんでした。`,
+                            type: 'warning',
+                            isLoading: false,
+                            autoClose: 1500,
+                            position: 'bottom-center', // 警告は下部に表示
+                        })
+                        setMental(5)
+                        setDiary('')
+                        return
+                    }
+                    setMental(response.data.mental || 5)
+                    setDiary(response.data.diary || '')
+                } else {
+                    console.warn('No response data found')
+                }
+            } catch (error) {
+                toast.update(toastId, {
+                    render: `${date}の日記データの取得中にエラーが発生しました。`,
+                    type: 'error',
+                    isLoading: false,
+                    autoClose: 1500,
+                    position: 'bottom-center', // エラーは下部に表示
+                })
+            } finally {
+                // ローディングトーストを閉じる
+                toast.dismiss(toastId)
+                setLoadingToastId(null)
+            }
+        }
+
+        fetchDiary()
+    }, [user?.id, date])
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+
+        if (!user?.id) {
+            console.error('User ID is not available')
+            toast.error('ユーザー情報が取得できませんでした。', { position: 'bottom-center' })
+            return
+        }
+
+        const toastId = toast.loading('日記を保存中...', { position: 'top-center' })
+        try {
+            const endpoint = EP.upsert_diary(user.id, date)
+            const response = await fetcherPost<DiaryApiResponse>(endpoint, { mental, diary })
+            toast.update(toastId, {
+                render: '日記が正常に保存されました！',
+                type: 'success',
+                isLoading: false,
+                autoClose: 1500,
+                position: 'bottom-center', // 成功メッセージは下部に表示
+            })
+            console.log('Success:', response)
+        } catch (error) {
+            toast.update(toastId, {
+                render: '日記の保存中にエラーが発生しました。',
+                type: 'error',
+                isLoading: false,
+                autoClose: 1500,
+                position: 'bottom-center', // エラーは下部に表示
+            })
+            console.error('Error:', error)
+        }
+    }
+
+    return (
+        <>
+            <Header title="Diary" />
+            <div className="py-12">
+                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                        <div className="p-6 bg-white border-b border-gray-200">
+                            <form onSubmit={handleSubmit}>
+                                {/* 日付入力 */}
+                                <div className="flex items-center gap-4">
+                                    <Button
+                                        type="button"
+                                        onClick={() => {
+                                            const prevDate = new Date(date)
+                                            prevDate.setDate(prevDate.getDate() - 1)
+                                            setDate(prevDate.toISOString().split('T')[0])
+                                        }}
+                                        className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded flex items-center">
+                                        <FaChevronLeft />
+                                    </Button>
+
+                                    <Input
+                                        type="date"
+                                        id="date"
+                                        name="date"
+                                        value={date}
+                                        onChange={(e) => setDate(e.target.value)}
+                                        className="ml-2 w-48"
+                                    />
+
+                                    <Button
+                                        type="button"
+                                        onClick={() => {
+                                            const nextDate = new Date(date)
+                                            nextDate.setDate(nextDate.getDate() + 1)
+                                            setDate(nextDate.toISOString().split('T')[0])
+                                        }}
+                                        className="ml-2 bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded flex items-center">
+                                        <FaChevronRight />
+                                    </Button>
+                                </div>
+
+                                {/* メンタル入力 */}
+                                <div className="mt-6 flex items-center gap-4">
+                                    <label htmlFor="mental" className="block text-sm font-medium text-gray-700">
+                                        メンタル
+                                    </label>
+                                    <Input
+                                        type="number"
+                                        id="mental"
+                                        name="mental"
+                                        min="1"
+                                        max="10"
+                                        required
+                                        value={mental}
+                                        onChange={(e) => setMental(Number(e.target.value))}
+                                        className="w-48 ml-4"
+                                    />
+                                </div>
+
+                                {/* 日記入力 */}
+                                <div className="mt-6">
+                                    <label htmlFor="diary" className="block text-sm font-medium text-gray-700">
+                                        日記
+                                    </label>
+                                    <textarea
+                                        id="diary"
+                                        name="diary"
+                                        rows={3}
+                                        value={diary}
+                                        onChange={(e) => setDiary(e.target.value)}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                    />
+                                </div>
+
+                                <Button type="submit" className="mt-4 bg-blue-600 hover:bg-blue-700">
+                                    送信
+                                </Button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* トースト */}
+            <ToastContainer />
+        </>
+    )
+}
+
+export default Diary
