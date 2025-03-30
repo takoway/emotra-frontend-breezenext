@@ -9,7 +9,8 @@ import Input from '@/components/Input'
 import { fetcherPost, fetcherGet, EP } from '@/fetch/fetcher'
 import { useAuth } from '@/hooks/auth'
 import { getTodayDateInTokyo } from '@/utils/date'
-import { DiaryApiResponse, DiaryData } from '@/types/diary'
+import { DiaryApiResponse } from '@/types/diary'
+import { FaChevronLeft, FaChevronRight } from 'react-icons/fa'
 
 const Diary = () => {
     const { user } = useAuth({ middleware: 'auth' })
@@ -72,15 +73,37 @@ const Diary = () => {
                         <div className="p-6 bg-white border-b border-gray-200">
                             <form onSubmit={handleSubmit}>
                                 {/* 日付入力 */}
-                                <div>
+                                <div className="flex items-center gap-4">
+                                    <Button
+                                        type="button"
+                                        onClick={() => {
+                                            const prevDate = new Date(date)
+                                            prevDate.setDate(prevDate.getDate() - 1)
+                                            setDate(prevDate.toISOString().split('T')[0])
+                                        }}
+                                        className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded flex items-center">
+                                        <FaChevronLeft/>
+                                    </Button>
+
                                     <Input
                                         type="date"
                                         id="date"
                                         name="date"
                                         value={date}
                                         onChange={(e) => setDate(e.target.value)}
-                                        className="w-48"
+                                        className="ml-2 w-48"
                                     />
+
+                                    <Button
+                                        type="button"
+                                        onClick={() => {
+                                            const nextDate = new Date(date)
+                                            nextDate.setDate(nextDate.getDate() + 1)
+                                            setDate(nextDate.toISOString().split('T')[0])
+                                        }}
+                                        className="ml-2 bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded flex items-center">
+                                        <FaChevronRight/>
+                                    </Button>
                                 </div>
 
                                 {/* メンタル入力 */}
