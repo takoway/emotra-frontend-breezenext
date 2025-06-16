@@ -1,4 +1,4 @@
-# EmoTra Backend
+# emotra-frontend-breezenext
 - メンタルヘルスのための感情トラッキングアプリケーション
 - 日記のように感情を記録し、振り返ることができる
 - Next.jsによるフロントエンドWebアプリケーション
